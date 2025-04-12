@@ -15,7 +15,7 @@ function MainLayout() {
       <Navbar />
 
 
-      <main className="flex-grow  py-6">
+      <main className="flex-grow  ">
         {/* Outlet for nested routes */}
         <Outlet />
       </main>

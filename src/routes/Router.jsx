@@ -4,6 +4,7 @@ import Home from "../pages/Home";
 import Vip from "../components/Vip";
 import Team from "../components/Team";
 import Profile from "../components/Profile";
+import AppInstallIncome from "../components/App";
 
 
 export const router = createBrowserRouter([
@@ -15,6 +16,7 @@ export const router = createBrowserRouter([
       { path: "/vip", element: <Vip /> },
       { path: "/team", element: <Team /> },
       { path: "/profile", element: <Profile /> },
+      { path: "/app", element: <AppInstallIncome/> },
     ],
   },
   

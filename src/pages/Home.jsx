@@ -1,181 +1,608 @@
-import React from 'react'
-import Banner from '../components/Banner'
-import Withdraw from "../assets/icon/withdraw.png";
-import Deposite from "../assets/icon/deposit.png";
-import Invite from "../assets/icon/wedding-invitation.png";
-import Team from "../assets/icon/developers.png";
-import { Link } from 'react-router-dom';
-import { RiArrowRightSLine, RiShieldCheckFill } from 'react-icons/ri';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  RiArrowRightSLine, 
+  RiShieldCheckFill, 
+  RiSparkling2Fill,
+  RiExchangeFill,
+  RiWallet3Fill,
+  RiPieChartFill,
+  RiNotification3Fill,
+  RiMoneyDollarCircleFill,
+  RiCalendarEventFill
+} from 'react-icons/ri';
+import { FiCreditCard, FiDollarSign, FiTrendingUp, FiPieChart } from 'react-icons/fi';
+import { BsGraphUp, BsCurrencyExchange, BsBank2 } from 'react-icons/bs';
+import { IoMdAnalytics } from 'react-icons/io';
+import incomeChart from '../assets/icon/deposit.png';
+import expenseChart from '../assets/icon/deposit.png';
+import premiumBadge from '../assets/icon/deposit.png';
+import Deposite from "../assets/icon/deposit.png"
 
-function Home() {
-  return (
-    <div className="bg-gradient-to-b from-slate-50 to-blue-50/30 min-h-screen py-8">
-      <Banner />
+// Mock data service
+const fetchIncomeData = () => {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve({
+        totalIncome: 18750.25,
+        totalExpenses: 6250.75,
+        netProfit: 12499.50,
+        incomeSources: [
+          { id: 1, name: 'Freelance Work', amount: 7500, percentage: 40, trend: 'up' },
+          { id: 2, name: 'Investments', amount: 6250, percentage: 33, trend: 'up' },
+          { id: 3, name: 'Product Sales', amount: 3500, percentage: 19, trend: 'down' },
+          { id: 4, name: 'Other', amount: 1500.25, percentage: 8, trend: 'neutral' }
+        ],
+        recentTransactions: [
+          { id: 1, type: 'income', source: 'Client Project', amount: 2500, date: '2023-06-15', status: 'completed' },
+          { id: 2, type: 'expense', source: 'Office Rent', amount: 1200, date: '2023-06-14', status: 'completed' },
+          { id: 3, type: 'income', source: 'Stock Dividends', amount: 850, date: '2023-06-12', status: 'completed' },
+          { id: 4, type: 'expense', source: 'Software Subscriptions', amount: 350, date: '2023-06-10', status: 'pending' }
+        ],
+        monthlyTrend: {
+          income: [12000, 13500, 14200, 15600, 16200, 17400, 18750],
+          expenses: [5800, 6200, 5900, 6100, 6300, 6150, 6250]
+        }
+      });
+    }, 800);
+  });
+};
 
-      {/* Floating Action Grid */}
-      <div className="max-w-7xl mx-auto px-4 py-12">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-          {[
-            { to: "/deposit", icon: Deposite, label: "Deposit", color: "from-emerald-500/15 to-cyan-500/10" },
-            { to: "/withdraw", icon: Withdraw, label: "Withdraw", color: "from-rose-500/15 to-pink-500/10" },
-            { to: "/team", icon: Team, label: "Team", color: "from-amber-500/15 to-orange-500/10" },
-            { to: "/invite", icon: Invite, label: "Invite", color: "from-violet-500/15 to-indigo-500/10" },
-          ].map((item, index) => (
-            <Link
-              key={index}
-              to={item.to}
-              className="group relative flex flex-col items-center p-6 bg-white/80 backdrop-blur-sm rounded-2xl 
-                shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 
-                border border-white/20 hover:border-white/40 overflow-hidden"
-            >
-              {/* Animated Gradient Background */}
-              <div className={`absolute inset-0 bg-gradient-to-br ${item.color} opacity-0 
-                group-hover:opacity-100 transition-opacity duration-500`} />
-              
-              {/* Hover Glow Effect */}
-              <div className="absolute inset-0 bg-radial-gradient from-white/30 to-transparent 
-                opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+const PremiumIncomeDashboard = () => {
+  const [incomeData, setIncomeData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [timeRange, setTimeRange] = useState('monthly');
+  const [notifications, setNotifications] = useState([
+    { id: 1, message: 'New income received: $2,500 from Client Project', time: '3 hours ago', read: false },
+    { id: 2, message: 'Your monthly financial report is ready', time: '1 day ago', read: false },
+    { id: 3, message: 'Subscription renewal due in 3 days', time: '2 days ago', read: true }
+  ]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showIncomeModal, setShowIncomeModal] = useState(false);
+  const [newIncome, setNewIncome] = useState({ source: '', amount: '', date: '' });
 
-              {/* Icon Container */}
-              <div className="relative z-10 w-20 h-20 mb-4 p-4 bg-white rounded-2xl shadow-inner 
-                flex items-center justify-center transition-transform duration-300 group-hover:scale-110 
-                group-hover:bg-white/90">
-                <img 
-                  src={item.icon} 
-                  alt={item.label} 
-                  className="w-12 h-12 object-contain grayscale group-hover:grayscale-0 
-                    transition-all duration-300"
-                />
-              </div>
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const data = await fetchIncomeData();
+        setIncomeData(data);
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadData();
+  }, []);
 
-              {/* Label with Animated Arrow */}
-              <div className="relative z-10 flex items-center gap-2">
-                <span className="text-lg font-semibold bg-gradient-to-r from-slate-800 to-slate-900 
-                  bg-clip-text text-transparent group-hover:text-transparent group-hover:bg-gradient-to-r 
-                  group-hover:from-emerald-600 group-hover:to-cyan-600 transition-colors duration-300">
-                  {item.label}
-                </span>
-                <RiArrowRightSLine className="w-5 h-5 text-slate-400 group-hover:text-cyan-500 
-                  transition-all duration-300 transform group-hover:translate-x-1" />
-              </div>
-            </Link>
-          ))}
+  const markAsRead = (id) => {
+    setNotifications(notifications.map(n => 
+      n.id === id ? { ...n, read: true } : n
+    ));
+  };
+
+  const handleAddIncome = (e) => {
+    e.preventDefault();
+    // In a real app, you would send this to your backend
+    console.log('Adding new income:', newIncome);
+    setShowIncomeModal(false);
+    setNewIncome({ source: '', amount: '', date: '' });
+  };
+
+  const quickActions = [
+    { icon: <FiDollarSign size={20} />, label: 'Add Income', action: () => setShowIncomeModal(true) },
+    { icon: <FiCreditCard size={20} />, label: 'Add Expense', action: () => console.log('Add Expense clicked') },
+    { icon: <BsGraphUp size={20} />, label: 'Generate Report', action: () => console.log('Generate Report clicked') },
+    { icon: <IoMdAnalytics size={20} />, label: 'Tax Forecast', action: () => console.log('Tax Forecast clicked') }
+  ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white">
+        <div className="text-center">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
+            className="mx-auto w-16 h-16 border-4 border-indigo-500/30 border-t-indigo-400 rounded-full mb-4"
+          />
+          <p className="text-indigo-100 font-medium">Loading your premium dashboard...</p>
         </div>
       </div>
+    );
+  }
 
-      {/* Glassmorphic Financial Dashboard */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 rounded-[2rem] 
-          shadow-2xl overflow-hidden border border-white/10 backdrop-blur-xl">
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 py-5 text-white overflow-hidden">
+      {/* Floating Particles Background */}
+      <div className="fixed inset-0 overflow-hidden opacity-20">
+        {[...Array(30)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute rounded-full bg-indigo-400"
+            initial={{
+              x: Math.random() * window.innerWidth,
+              y: Math.random() * window.innerHeight,
+              width: Math.random() * 5 + 1,
+              height: Math.random() * 5 + 1,
+              opacity: Math.random() * 0.5 + 0.1
+            }}
+            animate={{
+              y: [0, Math.random() * 100 - 50],
+              opacity: [0.3, 0.8, 0.3]
+            }}
+            transition={{
+              duration: Math.random() * 10 + 5,
+              repeat: Infinity,
+              repeatType: 'reverse'
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Main Content */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 py-8">
+        {/* Header */}
+        <header className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex items-center gap-3"
+          >
+            <div className="p-2 bg-indigo-500/10 rounded-xl border border-indigo-400/30">
+              <RiMoneyDollarCircleFill className="text-indigo-400 text-2xl" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-indigo-400 to-purple-400 bg-clip-text text-transparent">
+                Income Tracker Pro
+              </h1>
+              <p className="text-sm text-indigo-300">Track, analyze, and optimize your income streams</p>
+            </div>
+          </motion.div>
           
-          {/* Animated Background Elements */}
-          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] 
-            opacity-20 mix-blend-soft-light animate-texture-move" />
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/5 to-blue-500/5" />
-
-          {/* Header Section */}
-          <div className="relative flex flex-col md:flex-row justify-between items-center mb-8 gap-6">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-white/5 rounded-xl backdrop-blur-sm border border-white/10 
-                hover:border-cyan-400/30 transition-all duration-300">
-                <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-indigo-400 
-                  bg-clip-text text-transparent animate-gradient-shift">
-                  MFC
-                </h2>
-              </div>
-              <div className="hidden md:block h-8 w-px bg-white/20" />
-              <div className="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-full backdrop-blur-sm 
-                border border-white/10 hover:border-cyan-400/30 transition-all duration-300">
-                <RiShieldCheckFill className="w-5 h-5 text-cyan-400" />
-                <span className="text-sm text-cyan-200">Account #984545</span>
-                <span className="text-xs text-cyan-400/80">Verified</span>
-              </div>
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <button 
+                onClick={() => setShowNotifications(!showNotifications)}
+                className="p-2 rounded-full bg-white/5 hover:bg-indigo-500/10 transition-colors relative"
+              >
+                <RiNotification3Fill className="text-xl" />
+                {notifications.filter(n => !n.read).length > 0 && (
+                  <span className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-full"></span>
+                )}
+              </button>
+              
+              <AnimatePresence>
+                {showNotifications && (
+                  <motion.div 
+                    initial={{ opacity: 0, y: -20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    className="absolute right-0 mt-2 w-72 bg-slate-800/95 backdrop-blur-lg rounded-xl shadow-2xl border border-white/10 overflow-hidden"
+                  >
+                    <div className="p-3 border-b border-white/10 text-sm font-medium flex justify-between items-center">
+                      <span>Notifications</span>
+                      <button className="text-xs text-indigo-400 hover:text-indigo-300">
+                        Mark all as read
+                      </button>
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {notifications.map(notification => (
+                        <div 
+                          key={notification.id}
+                          className={`p-3 border-b border-white/5 hover:bg-white/5 cursor-pointer transition-colors ${notification.read ? 'opacity-70' : ''}`}
+                          onClick={() => markAsRead(notification.id)}
+                        >
+                          <p className="text-sm">{notification.message}</p>
+                          <p className="text-xs text-white/50 mt-1">{notification.time}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
             
-            {/* Quick Action Menu */}
-            <div className="flex gap-3">
-              <button className="px-4 py-2 text-sm bg-white/5 rounded-full backdrop-blur-sm border border-white/10 
-                text-cyan-300 hover:bg-cyan-500/10 hover:border-cyan-400/30 transition-all duration-300">
-                Transaction History
-              </button>
-              <button className="px-4 py-2 text-sm bg-cyan-500/10 rounded-full backdrop-blur-sm border border-cyan-400/20 
-                text-cyan-300 hover:bg-cyan-500/20 hover:border-cyan-400/30 transition-all duration-300">
-                Upgrade Account
-              </button>
+            <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full border border-white/10 relative">
+              <img 
+                src={premiumBadge} 
+                alt="Premium Badge" 
+                className="w-5 h-5 absolute -left-2 -top-2"
+              />
+              <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+              <span className="text-sm">Premium Member</span>
             </div>
           </div>
+        </header>
 
-          {/* Financial Metrics Grid */}
-          <div className="relative grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {[
-              { 
-                title: "Total Recharge", 
-                value: "0.00", 
-                currency: "USDT",
-                icon: (
-                  <svg className="w-8 h-8 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                  </svg>
-                ),
-                trend: "↑ 12% this month",
-                color: "cyan"
-              },
-              { 
-                title: "Total Balance", 
-                value: "0.00", 
-                currency: "USDT",
-                icon: (
-                  <svg className="w-8 h-8 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/>
-                  </svg>
-                ),
-                trend: "↗ 5% weekly growth",
-                color: "blue"
-              }
-            ].map((metric, index) => (
-              <div 
-                key={index}
-                className={`p-1 rounded-2xl bg-gradient-to-br from-${metric.color}-500/20 to-${metric.color}-600/10 
-                  hover:shadow-xl transition-all duration-300`}
+        {/* Time Range Selector */}
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="flex justify-center md:justify-end mb-8"
+        >
+          <div className="inline-flex bg-slate-800/50 rounded-lg p-1 border border-white/10">
+            {['weekly', 'monthly', 'quarterly', 'yearly'].map((range) => (
+              <button
+                key={range}
+                onClick={() => setTimeRange(range)}
+                className={`px-4 py-2 text-sm rounded-md transition-all ${
+                  timeRange === range 
+                    ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-400/30' 
+                    : 'text-white/70 hover:text-white hover:bg-white/5'
+                }`}
               >
-                <div className="bg-slate-900/80 rounded-xl p-6 backdrop-blur-sm border border-white/5">
-                  <div className="flex items-center justify-between gap-6">
-                    <div className="flex items-center gap-4">
-                      <div className={`p-3 bg-${metric.color}-500/10 rounded-lg`}>
-                        {metric.icon}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-cyan-100 mb-1">{metric.title}</p>
-                        <div className="flex items-baseline gap-3">
-                          <span className="text-3xl font-bold text-white">{metric.value}</span>
-                          <span className="text-sm text-${metric.color}-300">{metric.currency}</span>
-                        </div>
-                        <span className={`text-xs text-${metric.color}-400 mt-1`}>{metric.trend}</span>
-                      </div>
+                {range.charAt(0).toUpperCase() + range.slice(1)}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+          {/* Quick Actions */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="lg:col-span-4 bg-slate-800/50 backdrop-blur-lg rounded-2xl border border-white/10 p-6"
+          >
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-lg font-medium">Quick Actions</h2>
+              <button className="text-sm text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
+                View all <RiArrowRightSLine />
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {quickActions.map((action, index) => (
+                <motion.button
+                  key={index}
+                  whileHover={{ y: -5 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={action.action}
+                  className="flex flex-col items-center justify-center gap-3 p-4 bg-gradient-to-br from-slate-700/50 to-slate-800/70 rounded-xl border border-white/10 hover:border-indigo-400/30 transition-all"
+                >
+                  <div className="p-3 bg-indigo-500/10 rounded-lg text-indigo-400">
+                    {action.icon}
+                  </div>
+                  <span className="text-sm font-medium">{action.label}</span>
+                </motion.button>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Main Metrics */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="lg:col-span-3 space-y-6"
+          >
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {/* Total Income Card */}
+              <div className="bg-gradient-to-br from-indigo-600/20 to-purple-600/10 rounded-2xl border border-indigo-400/20 p-6 relative overflow-hidden">
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
+                <div className="relative">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-sm text-indigo-200 mb-1">Total Income</p>
+                      <h3 className="text-2xl font-bold">${incomeData.totalIncome.toLocaleString()}</h3>
                     </div>
-                    <RiArrowRightSLine className={`w-6 h-6 text-${metric.color}-400 opacity-0 
-                      group-hover:opacity-100 transition-opacity duration-300`} />
+                    <div className="p-2 bg-white/10 rounded-lg">
+                      <FiDollarSign className="text-indigo-400 text-xl" />
+                    </div>
+                  </div>
+                  <div className="mt-4 flex items-center gap-2">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                    <span className="text-xs text-emerald-400">+15.2% from last {timeRange}</span>
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
 
-          {/* Progress Indicator */}
-          <div className="mt-8 pt-6 border-t border-white/10">
-            <div className="flex items-center justify-between text-sm text-cyan-300 mb-2">
-              <span>Account Verification Progress</span>
-              <span>65%</span>
+              {/* Total Expenses Card */}
+              <div className="bg-gradient-to-br from-rose-600/20 to-pink-600/10 rounded-2xl border border-rose-400/20 p-6 relative overflow-hidden">
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
+                <div className="relative">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-sm text-rose-200 mb-1">Total Expenses</p>
+                      <h3 className="text-2xl font-bold">${incomeData.totalExpenses.toLocaleString()}</h3>
+                    </div>
+                    <div className="p-2 bg-white/10 rounded-lg">
+                      <RiExchangeFill className="text-rose-400 text-xl" />
+                    </div>
+                  </div>
+                  <div className="mt-4 flex items-center gap-2">
+                    <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse"></div>
+                    <span className="text-xs text-amber-400">+3.8% from last {timeRange}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Net Profit Card */}
+              <div className="bg-gradient-to-br from-emerald-600/20 to-teal-600/10 rounded-2xl border border-emerald-400/20 p-6 relative overflow-hidden">
+                <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10"></div>
+                <div className="relative">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <p className="text-sm text-emerald-200 mb-1">Net Profit</p>
+                      <h3 className="text-2xl font-bold">${incomeData.netProfit.toLocaleString()}</h3>
+                    </div>
+                    <div className="p-2 bg-white/10 rounded-lg">
+                      <FiTrendingUp className="text-emerald-400 text-xl" />
+                    </div>
+                  </div>
+                  <div className="mt-4 flex items-center gap-2">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                    <span className="text-xs text-emerald-400">+22.4% from last {timeRange}</span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-              <div className="w-2/3 h-full bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full 
-                transition-all duration-500" />
+
+            {/* Charts Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Income Chart */}
+              <div className="bg-slate-800/50 backdrop-blur-lg rounded-2xl border border-white/10 p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-md font-medium flex items-center gap-2">
+                    <FiDollarSign className="text-indigo-400" />
+                    Income Breakdown
+                  </h3>
+                  <button className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
+                    Details <RiArrowRightSLine />
+                  </button>
+                </div>
+                <div className="h-48 bg-slate-700/30 rounded-lg border border-white/5 overflow-hidden">
+                  <img 
+                    src={incomeChart} 
+                    alt="Income Chart" 
+                    className="w-full h-full object-cover opacity-90"
+                  />
+                </div>
+                <div className="mt-4 grid grid-cols-2 gap-3">
+                  {incomeData.incomeSources.map((source, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <div className={`w-3 h-3 rounded-full ${
+                        source.trend === 'up' ? 'bg-emerald-500' : 
+                        source.trend === 'down' ? 'bg-rose-500' : 'bg-amber-500'
+                      }`}></div>
+                      <span className="text-xs text-white/80 flex-1 truncate">{source.name}</span>
+                      <span className="text-xs font-medium">{source.percentage}%</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Expenses Chart */}
+              <div className="bg-slate-800/50 backdrop-blur-lg rounded-2xl border border-white/10 p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-md font-medium flex items-center gap-2">
+                    <RiExchangeFill className="text-rose-400" />
+                    Expense Analysis
+                  </h3>
+                  <button className="text-xs text-rose-400 hover:text-rose-300 flex items-center gap-1">
+                    Details <RiArrowRightSLine />
+                  </button>
+                </div>
+                <div className="h-48 bg-slate-700/30 rounded-lg border border-white/5 overflow-hidden">
+                  <img 
+                    src={expenseChart} 
+                    alt="Expense Chart" 
+                    className="w-full h-full object-cover opacity-90"
+                  />
+                </div>
+                <div className="mt-4">
+                  <div className="flex justify-between text-xs mb-1">
+                    <span className="text-emerald-400">Essential (62%)</span>
+                    <span className="text-white/70">$3,875.50</span>
+                  </div>
+                  <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 w-[62%]"></div>
+                  </div>
+                  <div className="flex justify-between text-xs mt-3 mb-1">
+                    <span className="text-amber-400">Discretionary (28%)</span>
+                    <span className="text-white/70">$1,750.25</span>
+                  </div>
+                  <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-amber-500 to-orange-500 w-[28%]"></div>
+                  </div>
+                  <div className="flex justify-between text-xs mt-3 mb-1">
+                    <span className="text-rose-400">Unexpected (10%)</span>
+                    <span className="text-white/70">$625.00</span>
+                  </div>
+                  <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+                    <div className="h-full bg-gradient-to-r from-rose-500 to-pink-500 w-[10%]"></div>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          </motion.div>
+
+          {/* Sidebar */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="lg:col-span-1 space-y-6"
+          >
+            {/* Recent Transactions */}
+            <div className="bg-slate-800/50 backdrop-blur-lg rounded-2xl border border-white/10 p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-md font-medium">Recent Transactions</h2>
+                <button className="text-xs text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
+                  View all <RiArrowRightSLine />
+                </button>
+              </div>
+              
+              <div className="space-y-3">
+                {incomeData.recentTransactions.map((txn, index) => (
+                  <div key={index} className="flex justify-between items-center p-3 hover:bg-white/5 rounded-lg transition-colors">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-lg ${
+                        txn.type === 'income' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'
+                      }`}>
+                        {txn.type === 'income' ? <FiDollarSign /> : <RiExchangeFill />}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{txn.source}</p>
+                        <p className="text-xs text-white/50 flex items-center gap-1">
+                          <RiCalendarEventFill className="text-xs" />
+                          {txn.date}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className={`text-sm font-medium ${
+                        txn.type === 'income' ? 'text-emerald-400' : 'text-rose-400'
+                      }`}>
+                        {txn.type === 'income' ? '+' : '-'}${txn.amount.toLocaleString()}
+                      </p>
+                      <p className={`text-xs ${
+                        txn.status === 'completed' ? 'text-emerald-400' : 'text-amber-400'
+                      }`}>
+                        {txn.status}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Premium Features */}
+            <div className="bg-gradient-to-br from-indigo-600/20 to-purple-600/10 rounded-2xl border border-indigo-400/20 p-6">
+              <h2 className="text-md font-medium mb-4 flex items-center gap-2">
+                <RiSparkling2Fill className="text-indigo-400" />
+                Premium Features
+              </h2>
+              
+              <ul className="space-y-3 text-sm">
+                <li className="flex items-start gap-2">
+                  <div className="mt-0.5 text-indigo-400">
+                    <RiShieldCheckFill />
+                  </div>
+                  <span>Advanced income analytics</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="mt-0.5 text-indigo-400">
+                    <FiPieChart />
+                  </div>
+                  <span>Customizable reports</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="mt-0.5 text-indigo-400">
+                    <BsBank2 />
+                  </div>
+                  <span>Multi-account integration</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <div className="mt-0.5 text-indigo-400">
+                    <IoMdAnalytics />
+                  </div>
+                  <span>Tax optimization tools</span>
+                </li>
+              </ul>
+              
+              <button className="w-full mt-4 py-2 text-sm bg-indigo-500/10 rounded-lg border border-indigo-400/30 text-indigo-400 hover:bg-indigo-500/20 transition-colors flex items-center justify-center gap-2">
+                Explore All Features <RiArrowRightSLine />
+              </button>
+            </div>
+          </motion.div>
         </div>
       </div>
+
+      {/* Add Income Modal */}
+      <AnimatePresence>
+        {showIncomeModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-slate-800 rounded-2xl border border-white/10 w-full max-w-md overflow-hidden"
+            >
+              <div className="p-6 border-b border-white/10">
+                <h3 className="text-lg font-medium flex items-center gap-2">
+                  <FiDollarSign className="text-indigo-400" />
+                  Add New Income
+                </h3>
+              </div>
+              
+              <form onSubmit={handleAddIncome} className="p-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm text-white/70 mb-1">Income Source</label>
+                    <input 
+                      type="text" 
+                      value={newIncome.source}
+                      onChange={(e) => setNewIncome({...newIncome, source: e.target.value})}
+                      className="w-full bg-slate-700/50 border border-white/10 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      placeholder="Freelance work, Investment, etc."
+                      required
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm text-white/70 mb-1">Amount</label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/50">$</span>
+                      <input 
+                        type="number" 
+                        value={newIncome.amount}
+                        onChange={(e) => setNewIncome({...newIncome, amount: e.target.value})}
+                        className="w-full bg-slate-700/50 border border-white/10 rounded-lg px-4 py-2.5 pl-8 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                        placeholder="0.00"
+                        min="0"
+                        step="0.01"
+                        required
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm text-white/70 mb-1">Date</label>
+                    <input 
+                      type="date" 
+                      value={newIncome.date}
+                      onChange={(e) => setNewIncome({...newIncome, date: e.target.value})}
+                      className="w-full bg-slate-700/50 border border-white/10 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="mt-6 flex justify-end gap-3">
+                  <button 
+                    type="button"
+                    onClick={() => setShowIncomeModal(false)}
+                    className="px-4 py-2 text-sm bg-white/5 rounded-lg border border-white/10 hover:bg-white/10 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit"
+                    className="px-4 py-2 text-sm bg-indigo-500/10 rounded-lg border border-indigo-400/30 text-indigo-400 hover:bg-indigo-500/20 transition-colors flex items-center gap-2"
+                  >
+                    <FiDollarSign />
+                    Add Income
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
-}
+};
 
-export default Home;
+export default PremiumIncomeDashboard;
