@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation, NavLink } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiHome, FiStar, FiUser } from 'react-icons/fi';
-import { RiVipCrownFill, RiCoinFill, RiSparkling2Fill } from 'react-icons/ri';
-import { IoDiamond, IoRocket } from 'react-icons/io5';
+import { FiHome, FiUser, FiClock } from 'react-icons/fi';
+import { RiVipCrownFill, RiCoinFill, RiSparkling2Fill, RiHistoryLine } from 'react-icons/ri';
+import { IoDiamond } from 'react-icons/io5';
 import { GiCrystalBars } from 'react-icons/gi';
 
 function PremiumNavigation() {
@@ -13,10 +13,18 @@ function PremiumNavigation() {
   const [points, setPoints] = useState(8888);
   const [showEarningToast, setShowEarningToast] = useState(false);
   const [lastEarned, setLastEarned] = useState(0);
+  const [showHistory, setShowHistory] = useState(false);
   const navRef = useRef(null);
   const streakRef = useRef(0);
   const lastInteractionTime = useRef(Date.now());
   const floatingIcons = useRef([]);
+  const [rewardHistory, setRewardHistory] = useState([
+    { id: 1, type: 'Daily Streak', amount: 120, time: '2 mins ago', icon: <RiSparkling2Fill /> },
+    { id: 2, type: 'Video Reward', amount: 50, time: '15 mins ago', icon: <RiCoinFill /> },
+    { id: 3, type: 'Engagement Bonus', amount: 75, time: '1 hour ago', icon: <IoDiamond /> },
+    { id: 4, type: 'App Install', amount: 200, time: '3 hours ago', icon: <GiCrystalBars /> },
+    { id: 5, type: 'Micro Task', amount: 150, time: '5 hours ago', icon: <RiVipCrownFill /> }
+  ]);
 
   // Generate floating micro-interaction icons
   useEffect(() => {
@@ -76,6 +84,16 @@ function PremiumNavigation() {
       setPoints(prev => {
         if (bonus >= 5) {
           setLastEarned(bonus);
+          setRewardHistory(prev => [
+            {
+              id: Date.now(),
+              type: 'Active Reward',
+              amount: bonus,
+              time: 'Just now',
+              icon: <RiSparkling2Fill />
+            },
+            ...prev.slice(0, 9)
+          ]);
           setShowEarningToast(true);
           setTimeout(() => setShowEarningToast(false), 2500);
         }
@@ -114,7 +132,7 @@ function PremiumNavigation() {
   const navItems = [
     {
       path: "/",
-      icon: <FiHome className="w-6 h-6" />,
+      icon: <FiHome className="w-5 h-5" />,
       label: "Nexus",
       color: "text-cyan-400",
       hoverColor: "text-cyan-300",
@@ -122,12 +140,11 @@ function PremiumNavigation() {
       animation: { 
         rotate: [0, 5, -5, 0],
         transition: { duration: 1.5, repeat: Infinity }
-      },
-      shape: "M12 2L2 7l10 5 10-5-10-5z"
+      }
     },
     {
       path: "/vip",
-      icon: <RiVipCrownFill className="w-6 h-6" />,
+      icon: <RiVipCrownFill className="w-5 h-5" />,
       label: "Elite",
       color: "text-purple-400",
       hoverColor: "text-purple-300",
@@ -137,12 +154,11 @@ function PremiumNavigation() {
         y: [0, -5, 0],
         rotate: [0, -2, 2, 0],
         transition: { duration: 1.2, repeat: Infinity }
-      },
-      shape: "M12 2L2 7l10 5 10-5-10-5z"
+      }
     },
     {
-      path: "/earn",
-      icon: <RiCoinFill className="w-6 h-6" />,
+      path: "/app",
+      icon: <RiCoinFill className="w-5 h-5" />,
       label: "Vault",
       color: "text-amber-400",
       hoverColor: "text-amber-300",
@@ -150,12 +166,11 @@ function PremiumNavigation() {
       animation: { 
         scale: [1, 1.1, 1],
         transition: { duration: 1, repeat: Infinity }
-      },
-      shape: "M12 2L2 7l10 5 10-5-10-5z"
+      }
     },
     {
       path: "/profile",
-      icon: <FiUser className="w-6 h-6" />,
+      icon: <FiUser className="w-5 h-5" />,
       label: "Aura",
       color: "text-emerald-400",
       hoverColor: "text-emerald-300",
@@ -163,8 +178,7 @@ function PremiumNavigation() {
       animation: { 
         rotateY: [0, 180, 360],
         transition: { duration: 3, repeat: Infinity, ease: "linear" }
-      },
-      shape: "M12 2L2 7l10 5 10-5-10-5z"
+      }
     }
   ];
 
@@ -198,27 +212,9 @@ function PremiumNavigation() {
 
   return (
     <>
-      {/* Premium Points Display */}
-      <motion.div
-        className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50"
-        initial={{ y: -50 }}
-        animate={{ y: 0 }}
-        transition={{ type: 'spring', damping: 10 }}
-      >
-        <div className="flex items-center bg-black/80 backdrop-blur-xl border border-white/10 rounded-full px-5 py-2 shadow-2xl">
-          <IoDiamond className="text-cyan-400 mr-2 animate-pulse" />
-          <span className="font-mono text-white font-bold text-sm tracking-wider">
-            {points.toLocaleString()} CR
-          </span>
-          <div className="ml-3 h-4 w-px bg-white/20"></div>
-          <div className="ml-3 flex items-center">
-            <RiSparkling2Fill className="text-amber-400 mr-1" />
-            <span className="text-xs font-bold text-amber-400">
-              x{streakRef.current.toFixed(1)}
-            </span>
-          </div>
-        </div>
-      </motion.div>
+  
+
+      
 
       {/* Earning Toast with Physics */}
       <AnimatePresence>
@@ -287,7 +283,7 @@ function PremiumNavigation() {
       {/* Main Navigation - Premium Glass Panel */}
       <motion.div
         ref={navRef}
-        className={`fixed bottom-0 left-0 z-50 w-full h-24 bg-gray-900/90 border-t border-white/10 
+        className={`fixed bottom-0 left-0 z-50 w-full h-16 bg-gray-900/95 border-t border-white/10 
           shadow-2xl backdrop-blur-2xl`}
         initial={{ y: 100 }}
         animate={{ 
@@ -355,7 +351,7 @@ function PremiumNavigation() {
               >
                 {/* 3D Icon Container */}
                 <motion.div
-                  className={`p-4 rounded-2xl ${isActive ? 
+                  className={`p-3 rounded-2xl ${isActive ? 
                     `bg-gradient-to-br ${item.gradient} shadow-xl` : 
                     'bg-white/5 backdrop-blur-sm border border-white/5'}`}
                   whileHover={{ 
@@ -368,7 +364,7 @@ function PremiumNavigation() {
                     transition: { duration: 0.2 }
                   }}
                   animate={{
-                    y: isActive ? -10 : 0,
+                    y: isActive ? -8 : 0,
                     boxShadow: isActive ? 
                       `0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 0 20px ${item.hoverColor.replace('text-', 'rgba(').replace('-', ', ')}/0.3)` : 
                       '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
@@ -385,10 +381,10 @@ function PremiumNavigation() {
 
                 {/* Floating Label with Glow */}
                 <motion.span
-                  className={`text-xs font-medium mt-2 ${isActive ? 'text-white font-bold' : 'text-gray-400'}`}
+                  className={`text-[0.65rem] font-medium mt-1 ${isActive ? 'text-white font-bold' : 'text-gray-400'}`}
                   initial={{ y: 0 }}
                   animate={{ 
-                    y: isActive ? -5 : 0,
+                    y: isActive ? -4 : 0,
                     color: isActive ? 'white' : activeHover === index ? item.hoverColor : 'rgb(156, 163, 175)',
                     textShadow: isActive ? `0 0 10px ${item.hoverColor.replace('text-', '')}` : 'none',
                     transition: { type: 'spring', stiffness: 500 }
@@ -400,7 +396,7 @@ function PremiumNavigation() {
                 {/* Premium Badge */}
                 {item.badge && (
                   <motion.span
-                    className="absolute top-1 right-4 bg-gradient-to-br from-purple-500 to-fuchsia-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold shadow-lg flex items-center"
+                    className="absolute top-0 right-4 bg-gradient-to-br from-purple-500 to-fuchsia-600 text-white text-[0.6rem] px-1.5 py-0.5 rounded-full font-bold shadow-lg flex items-center"
                     initial={{ scale: 0 }}
                     animate={{ 
                       scale: 1,
@@ -417,7 +413,7 @@ function PremiumNavigation() {
                       transition: { duration: 0.4 }
                     }}
                   >
-                    <IoDiamond className="mr-1" />
+                    <IoDiamond className="mr-1 text-[0.6rem]" />
                     {item.badge}
                   </motion.span>
                 )}
@@ -430,7 +426,7 @@ function PremiumNavigation() {
                       initial={{ opacity: 0, y: 20, scale: 0.9 }}
                       animate={{ 
                         opacity: 1, 
-                        y: -60,
+                        y: -50,
                         scale: 1,
                         transition: { 
                           type: 'spring', 
@@ -478,7 +474,7 @@ function PremiumNavigation() {
 
         {/* Animated Plasma Trail */}
         <motion.div
-          className="absolute bottom-0 left-0 h-1 bg-gradient-to-r from-cyan-500 via-purple-500 to-amber-500"
+          className="absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-cyan-500 via-purple-500 to-amber-500"
           initial={{ width: 0 }}
           animate={{ 
             width: '100%',
