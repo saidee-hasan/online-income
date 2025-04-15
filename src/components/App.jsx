@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FaGooglePlay, FaCoins, FaGem, FaCrown, FaChartLine, FaUserTie, FaShareAlt } from 'react-icons/fa';
-import { MdSecurity, MdPhoneIphone, MdAttachMoney, MdTimer } from 'react-icons/md';
+import { FaGooglePlay, FaCoins, FaGem, FaCrown, FaChartLine, FaUserTie, FaShareAlt, FaSyncAlt } from 'react-icons/fa';
+import { MdSecurity, MdPhoneIphone, MdAttachMoney, MdTimer, MdPublic } from 'react-icons/md';
 import { RiCouponLine } from 'react-icons/ri';
 import { motion } from 'framer-motion';
 
@@ -10,17 +10,43 @@ const AppInstallIncome = () => {
   const [balance, setBalance] = useState(12.75);
   const [dailyApps, setDailyApps] = useState([]);
   const [timeLeft, setTimeLeft] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [totalInstalls, setTotalInstalls] = useState(0);
-  const [referralCount, setReferralCount] = useState(0);
+  const [userCountry, setUserCountry] = useState(null);
+  const [lastUpdated, setLastUpdated] = useState(null);
 
-  // Generate random apps for demonstration
-  useEffect(() => {
+  // Get random color for app cards
+  const getRandomColor = () => {
+    const colors = [
+      'bg-gradient-to-br from-red-500 to-red-700',
+      'bg-gradient-to-br from-blue-500 to-blue-700',
+      'bg-gradient-to-br from-green-500 to-green-700',
+      'bg-gradient-to-br from-yellow-500 to-yellow-700',
+      'bg-gradient-to-br from-purple-500 to-purple-700'
+    ];
+    return colors[Math.floor(Math.random() * colors.length)];
+  };
+
+  // Get appropriate icon based on offer type
+  const getOfferIcon = (type) => {
+    switch(type) {
+      case 'Pin-Submit': return '📱';
+      case 'Download': return '⬇️';
+      case 'Survey': return '📝';
+      case 'Signup': return '✍️';
+      default: return '💰';
+    }
+  };
+
+  // Generate demo apps for fallback
+  const generateDemoApps = () => {
     const appCategories = [
-      { name: "Games", icon: "🎮", color: "bg-red-500" },
-      { name: "Social", icon: "💬", color: "bg-blue-500" },
-      { name: "Shopping", icon: "🛍️", color: "bg-green-500" },
-      { name: "Finance", icon: "💰", color: "bg-yellow-500" },
-      { name: "Health", icon: "🏥", color: "bg-purple-500" },
+      { name: "Games", icon: "🎮", color: "bg-gradient-to-br from-red-500 to-red-700" },
+      { name: "Social", icon: "💬", color: "bg-gradient-to-br from-blue-500 to-blue-700" },
+      { name: "Shopping", icon: "🛍️", color: "bg-gradient-to-br from-green-500 to-green-700" },
+      { name: "Finance", icon: "💰", color: "bg-gradient-to-br from-yellow-500 to-yellow-700" },
+      { name: "Health", icon: "🏥", color: "bg-gradient-to-br from-purple-500 to-purple-700" },
     ];
 
     const generatedApps = Array.from({ length: 20 }, (_, i) => {
@@ -29,20 +55,77 @@ const AppInstallIncome = () => {
       return {
         id: i + 1,
         name: `${category.name} App ${i + 1}`,
+        description: `Install this ${category.name.toLowerCase()} app to earn money`,
         icon: category.icon,
         category: category.name,
+        type: ['Download', 'Pin-Submit', 'Survey', 'Signup'][Math.floor(Math.random() * 4)],
         reward: parseFloat(reward),
         color: category.color,
         installed: false,
-        premiumOnly: Math.random() > 0.7
+        premiumOnly: Math.random() > 0.7,
+        offerLink: "#",
+        image: null
       };
     });
 
     setDailyApps(generatedApps);
-    
-    // Set a random timer for new apps (1-24 hours)
     setTimeLeft(Math.floor(Math.random() * 24 * 60 * 60));
-  }, []);
+    setLastUpdated(new Date());
+  };
+
+  // Fetch offers from CPAGrip API
+  const fetchOffers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetch(
+        'https://www.cpagrip.com/common/offer_feed_json.php?user_id=2377100&pubkey=887afdb0a389da4880e9c224e725041d&tracking_id='
+      );
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (!data.offers || data.offers.length === 0) {
+        throw new Error('No offers available in the response');
+      }
+
+      // Extract country from response if available
+      if (data.general) {
+        const countryData = data.general.find(item => item.country_code);
+        if (countryData) {
+          setUserCountry(countryData.country_code);
+        }
+      }
+
+      const formattedOffers = data.offers.map((offer, index) => ({
+        id: offer.offer_id || index,
+        name: offer.title,
+        description: offer.description,
+        icon: getOfferIcon(offer.type || 'General'),
+        category: offer.category || 'General',
+        type: offer.type || 'General',
+        reward: parseFloat(offer.payout) || 0.5,
+        color: getRandomColor(),
+        installed: false,
+        premiumOnly: Math.random() > 0.7,
+        offerLink: offer.offerlink,
+        image: offer.offerphoto
+      }));
+      
+      setDailyApps(formattedOffers);
+      setTimeLeft(Math.floor(Math.random() * 24 * 60 * 60));
+      setLastUpdated(new Date());
+    } catch (err) {
+      console.error('Error fetching offers:', err);
+      setError(err.message);
+      generateDemoApps();
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Timer countdown effect
   useEffect(() => {
@@ -54,6 +137,11 @@ const AppInstallIncome = () => {
     
     return () => clearInterval(timer);
   }, [timeLeft]);
+
+  // Initial fetch
+  useEffect(() => {
+    fetchOffers();
+  }, []);
 
   const installApp = (appId) => {
     setDailyApps(prevApps =>
@@ -68,6 +156,10 @@ const AppInstallIncome = () => {
     const reward = isPremium ? app.reward * 2 : app.reward;
     setBalance(prev => prev + reward);
     setTotalInstalls(prev => prev + 1);
+    
+    if (app.offerLink && app.offerLink !== '#') {
+      window.open(app.offerLink, '_blank');
+    }
   };
 
   const formatTime = (seconds) => {
@@ -77,466 +169,374 @@ const AppInstallIncome = () => {
     return `${h}h ${m}m ${s}s`;
   };
 
-  const features = [
-    {
-      icon: <FaCoins className="text-yellow-400 text-2xl" />,
-      title: "Daily Rewards",
-      desc: "Earn coins every day just for opening the app",
-      stat: "Up to $5/day"
-    },
-    {
-      icon: <MdPhoneIphone className="text-blue-400 text-2xl" />,
-      title: "App Install Bonuses",
-      desc: "Get paid for trying new apps",
-      stat: "100+ apps available"
-    },
-    {
-      icon: <FaChartLine className="text-green-400 text-2xl" />,
-      title: "Referral Program",
-      desc: "Earn 25% of what your friends make",
-      stat: `${referralCount} friends joined`
-    },
-    {
-      icon: <MdSecurity className="text-purple-400 text-2xl" />,
-      title: "Secure Payments",
-      desc: "Withdraw via PayPal, Paytm or bank transfer",
-      stat: "100% secure"
-    }
-  ];
+  const formatDate = (date) => {
+    if (!date) return '';
+    return date.toLocaleTimeString() + ' ' + date.toLocaleDateString();
+  };
 
-  const premiumFeatures = [
-    {
-      icon: <FaCrown className="text-yellow-500 text-2xl" />,
-      title: "3x Earnings",
-      desc: "Triple rewards on all activities",
-      stat: "300% more"
-    },
-    {
-      icon: <FaGem className="text-pink-500 text-2xl" />,
-      title: "Exclusive Offers",
-      desc: "Access to high-paying premium offers",
-      stat: "50+ exclusive apps"
-    },
-    {
-      icon: <FaUserTie className="text-blue-500 text-2xl" />,
-      title: "Priority Support",
-      desc: "24/7 dedicated support team",
-      stat: "Instant response"
-    },
-    {
-      icon: <MdAttachMoney className="text-green-500 text-2xl" />,
-      title: "No Minimum Withdrawal",
-      desc: "Withdraw any amount instantly",
-      stat: "$0.01 minimum"
-    }
-  ];
+  const upgradeToPremium = () => {
+    setIsPremium(true);
+    // In a real app, you would handle payment processing here
+  };
+
+  const refreshOffers = () => {
+    fetchOffers();
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white">
-      {/* Hero Section */}
-      <div className="container mx-auto px-4 py-16 text-center">
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white py-8 px-4">
+      {/* Header */}
+      <div className="max-w-4xl mx-auto mb-8 text-center">
+        <motion.div
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.5 }}
-          className="max-w-3xl mx-auto"
+          className="flex justify-center items-center gap-2 mb-4"
         >
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">
-            {isPremium ? (
-              <><span className="text-purple-400">Premium</span> Earnings Power!</>
-            ) : (
-              <>Earn Money by <span className="text-yellow-400">Installing Apps</span></>
-            )}
+          <FaCoins className="text-yellow-400 text-3xl" />
+          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-yellow-600">
+            App Install Rewards
           </h1>
-          <p className="text-xl text-gray-300 mb-8">
-            {isPremium 
-              ? "You're earning 3x more with premium! Install apps faster and withdraw anytime."
-              : "Get paid for trying new apps and games. Withdraw your earnings instantly!"}
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4 mb-12">
-            <button className="bg-yellow-400 hover:bg-yellow-500 text-black font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition">
-              <FaGooglePlay /> Install Now
-            </button>
-            <button 
-              onClick={() => setIsPremium(!isPremium)}
-              className={`${isPremium ? 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700' : 'bg-gray-700 hover:bg-gray-600'} font-bold py-3 px-6 rounded-lg flex items-center justify-center gap-2 transition shadow-lg`}
+        </motion.div>
+        <p className="text-gray-400 max-w-2xl mx-auto">
+          Install apps and earn money instantly. Premium members earn 2x rewards!
+        </p>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-4xl mx-auto mb-8">
+        {/* Balance Card */}
+        <motion.div 
+          whileHover={{ scale: 1.02 }}
+          className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-4 border border-gray-700 shadow-lg"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-400 text-sm">Your Balance</p>
+              <p className="text-2xl font-bold text-yellow-400">${balance.toFixed(2)}</p>
+            </div>
+            <div className="bg-yellow-500 bg-opacity-20 p-3 rounded-full">
+              <MdAttachMoney className="text-yellow-400 text-2xl" />
+            </div>
+          </div>
+          <button className="mt-3 w-full bg-gradient-to-r from-yellow-500 to-yellow-600 text-black font-medium py-2 rounded-lg hover:opacity-90 transition">
+            Withdraw
+          </button>
+        </motion.div>
+
+        {/* Premium Status Card */}
+        <motion.div 
+          whileHover={{ scale: 1.02 }}
+          className={`rounded-xl p-4 border shadow-lg ${isPremium ? 'bg-gradient-to-br from-purple-800 to-purple-900 border-purple-600' : 'bg-gradient-to-br from-gray-800 to-gray-900 border-gray-700'}`}
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-400 text-sm">Membership</p>
+              <p className="text-xl font-bold">
+                {isPremium ? (
+                  <span className="text-purple-300">Premium <span className="text-xs bg-purple-600 px-2 py-1 rounded-full ml-1">ACTIVE</span></span>
+                ) : (
+                  <span className="text-gray-300">Basic</span>
+                )}
+              </p>
+            </div>
+            <div className={`p-3 rounded-full ${isPremium ? 'bg-purple-500 bg-opacity-20' : 'bg-gray-600 bg-opacity-20'}`}>
+              <FaCrown className={`text-2xl ${isPremium ? 'text-purple-400' : 'text-gray-400'}`} />
+            </div>
+          </div>
+          <button 
+            onClick={upgradeToPremium}
+            className={`mt-3 w-full font-medium py-2 rounded-lg transition ${isPremium ? 'bg-purple-600 hover:bg-purple-700' : 'bg-gradient-to-r from-purple-500 to-purple-600 hover:opacity-90'}`}
+            disabled={isPremium}
+          >
+            {isPremium ? 'Premium Active' : 'Upgrade to Premium'}
+          </button>
+        </motion.div>
+
+        {/* Stats Card */}
+        <motion.div 
+          whileHover={{ scale: 1.02 }}
+          className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl p-4 border border-gray-700 shadow-lg"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-400 text-sm">Total Installs</p>
+              <p className="text-2xl font-bold">{totalInstalls}</p>
+              {userCountry && (
+                <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
+                  <MdPublic /> {userCountry}
+                </div>
+              )}
+            </div>
+            <div className="bg-blue-500 bg-opacity-20 p-3 rounded-full">
+              <MdPhoneIphone className="text-blue-400 text-2xl" />
+            </div>
+          </div>
+          <div className="mt-2">
+            <p className="text-gray-400 text-sm">Earnings Multiplier</p>
+            <p className="text-lg font-bold">
+              {isPremium ? (
+                <span className="text-green-400">2.0x <span className="text-xs bg-green-600 px-2 py-1 rounded-full ml-1">PREMIUM</span></span>
+              ) : (
+                <span className="text-gray-300">1.0x</span>
+              )}
+            </p>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* Main App Container */}
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
+        className="bg-gray-800 rounded-2xl p-1 max-w-4xl mx-auto shadow-2xl border border-gray-700 overflow-hidden"
+      >
+        {/* Premium Ribbon */}
+        {isPremium && (
+          <div className="bg-gradient-to-r from-purple-600 to-purple-800 text-center py-1 text-xs font-bold text-white flex items-center justify-center gap-2">
+            <FaCrown className="text-yellow-300" />
+            <span>PREMIUM MEMBER - EARNING 2X REWARDS</span>
+            <FaCrown className="text-yellow-300" />
+          </div>
+        )}
+        
+        <div className="bg-gray-900 rounded-xl p-1">
+          {/* Tab Navigation */}
+          <div className="flex border-b border-gray-800">
+            <button
+              onClick={() => setActiveTab('earn')}
+              className={`flex-1 py-3 font-medium text-sm flex items-center justify-center gap-2 ${activeTab === 'earn' ? 'text-yellow-400 border-b-2 border-yellow-400' : 'text-gray-400 hover:text-gray-300'}`}
             >
-              <FaCrown /> {isPremium ? 'Premium Active' : 'Go Premium'}
+              <FaGooglePlay /> Earn
+            </button>
+            <button
+              onClick={() => setActiveTab('referrals')}
+              className={`flex-1 py-3 font-medium text-sm flex items-center justify-center gap-2 ${activeTab === 'referrals' ? 'text-yellow-400 border-b-2 border-yellow-400' : 'text-gray-400 hover:text-gray-300'}`}
+            >
+              <FaShareAlt /> Referrals
+            </button>
+            <button
+              onClick={() => setActiveTab('stats')}
+              className={`flex-1 py-3 font-medium text-sm flex items-center justify-center gap-2 ${activeTab === 'stats' ? 'text-yellow-400 border-b-2 border-yellow-400' : 'text-gray-400 hover:text-gray-300'}`}
+            >
+              <FaChartLine /> Stats
             </button>
           </div>
           
-          {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-            <div className="bg-gray-800 p-4 rounded-lg">
-              <div className="text-2xl font-bold text-yellow-400">${balance.toFixed(2)}</div>
-              <div className="text-sm text-gray-400">Your Balance</div>
-            </div>
-            <div className="bg-gray-800 p-4 rounded-lg">
-              <div className="text-2xl font-bold">{totalInstalls}</div>
-              <div className="text-sm text-gray-400">Apps Installed</div>
-            </div>
-            <div className="bg-gray-800 p-4 rounded-lg">
-              <div className="text-2xl font-bold">{dailyApps.filter(a => a.installed).length}/{dailyApps.length}</div>
-              <div className="text-sm text-gray-400">Today's Apps</div>
-            </div>
-            <div className="bg-gray-800 p-4 rounded-lg">
-              <div className="text-2xl font-bold">{referralCount}</div>
-              <div className="text-sm text-gray-400">Referrals</div>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* App Preview */}
-        <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.2, duration: 0.5 }}
-          className="bg-gray-800 rounded-2xl p-2 max-w-md mx-auto shadow-xl border border-gray-700"
-        >
-          <div className="bg-gray-900 rounded-xl p-4">
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-10 h-10 bg-yellow-400 rounded-lg flex items-center justify-center">
-                  <FaCoins className="text-black" />
-                </div>
-                <div>
-                  <div className="text-xs text-gray-400">Balance</div>
-                  <div className="font-bold">${balance.toFixed(2)}</div>
-                </div>
-              </div>
-              <div className={`${isPremium ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'bg-gray-700'} text-xs px-2 py-1 rounded-full flex items-center gap-1`}>
-                {isPremium ? <FaCrown className="text-yellow-300" /> : null} {isPremium ? 'PREMIUM' : 'BASIC'}
-              </div>
-            </div>
-
-            {/* Tabs */}
-            <div className="flex border-b border-gray-700 mb-4">
-              <button 
-                onClick={() => setActiveTab('earn')}
-                className={`px-4 py-2 font-medium ${activeTab === 'earn' ? 'text-yellow-400 border-b-2 border-yellow-400' : 'text-gray-400'}`}
-              >
-                Earn
-              </button>
-              <button 
-                onClick={() => setActiveTab('withdraw')}
-                className={`px-4 py-2 font-medium ${activeTab === 'withdraw' ? 'text-yellow-400 border-b-2 border-yellow-400' : 'text-gray-400'}`}
-              >
-                Withdraw
-              </button>
-              <button 
-                onClick={() => setActiveTab('refer')}
-                className={`px-4 py-2 font-medium ${activeTab === 'refer' ? 'text-yellow-400 border-b-2 border-yellow-400' : 'text-gray-400'}`}
-              >
-                Refer
-              </button>
-            </div>
-
-            {/* Tab Content */}
+          {/* Tab Content */}
+          <div className="p-4">
             {activeTab === 'earn' && (
-              <div className="space-y-4 max-h-96 overflow-y-auto">
-                {timeLeft > 0 && (
-                  <div className="bg-blue-900 bg-opacity-30 p-3 rounded-lg flex items-center gap-3 text-sm">
-                    <MdTimer className="text-blue-400 text-xl" />
-                    <div>
-                      <h3 className="font-medium">New apps in:</h3>
-                      <p className="text-blue-300">{formatTime(timeLeft)}</p>
-                    </div>
-                  </div>
-                )}
-                
-                {dailyApps.map((app) => (
-                  <div 
-                    key={app.id} 
-                    className={`bg-gray-800 p-3 rounded-lg flex items-center gap-3 ${app.premiumOnly && !isPremium ? 'opacity-60' : ''}`}
+              <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+                <div className="flex justify-between items-center mb-2">
+                  {lastUpdated && (
+                    <p className="text-xs text-gray-500">
+                      Last updated: {formatDate(lastUpdated)}
+                    </p>
+                  )}
+                  <button 
+                    onClick={refreshOffers}
+                    className="text-xs flex items-center gap-1 text-gray-400 hover:text-gray-300"
                   >
-                    <div className={`${app.color} p-2 rounded-lg`}>
-                      <span className="text-xl">{app.icon}</span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium truncate">{app.name}</h3>
-                      <div className="flex justify-between text-xs text-gray-400">
-                        <span>{app.category}</span>
-                        <span className="text-yellow-400">${isPremium ? (app.reward * 2).toFixed(2) : app.reward.toFixed(2)}</span>
-                      </div>
-                    </div>
-                    {app.premiumOnly && !isPremium ? (
-                      <button 
-                        className="ml-auto bg-purple-600 text-white text-sm px-3 py-1 rounded flex items-center gap-1"
-                        onClick={() => setIsPremium(true)}
-                      >
-                        <FaCrown /> Premium
-                      </button>
-                    ) : (
-                      <button 
-                        className={`ml-auto ${app.installed ? 'bg-gray-600 text-gray-400' : 'bg-yellow-400 text-black'} text-sm px-3 py-1 rounded`}
-                        onClick={() => !app.installed && installApp(app.id)}
-                        disabled={app.installed}
-                      >
-                        {app.installed ? 'Installed' : 'Install'}
-                      </button>
-                    )}
+                    <FaSyncAlt className={loading ? 'animate-spin' : ''} /> Refresh
+                  </button>
+                </div>
+
+                {loading ? (
+                  <div className="flex justify-center items-center py-12">
+                    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-yellow-400"></div>
                   </div>
-                ))}
+                ) : error ? (
+                  <div className="bg-red-900 bg-opacity-30 p-4 rounded-lg text-center">
+                    <p>Error loading offers: {error}</p>
+                    <p className="text-sm text-gray-300 mt-1">Showing demo apps instead</p>
+                  </div>
+                ) : (
+                  <>
+                    {timeLeft > 0 && (
+                      <div className="bg-blue-900 bg-opacity-30 p-3 rounded-lg flex items-center gap-3 text-sm border border-blue-800">
+                        <MdTimer className="text-blue-400 text-xl" />
+                        <div>
+                          <h3 className="font-medium">New apps in:</h3>
+                          <p className="text-blue-300">{formatTime(timeLeft)}</p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {dailyApps.map((app) => (
+                        <motion.div 
+                          key={app.id}
+                          whileHover={{ scale: 1.01 }}
+                          className={`bg-gray-800 p-3 rounded-lg flex items-center gap-3 border ${app.premiumOnly ? 'border-purple-800' : 'border-gray-700'} ${app.premiumOnly && !isPremium ? 'opacity-70' : ''}`}
+                        >
+                          {app.image ? (
+                            <img 
+                              src={app.image} 
+                              alt={app.name}
+                              className="w-12 h-12 rounded-lg object-cover"
+                            />
+                          ) : (
+                            <div className={`${app.color} p-3 rounded-lg flex items-center justify-center`}>
+                              <span className="text-2xl">{app.icon}</span>
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-medium truncate">{app.name}</h3>
+                            <div className="flex justify-between text-xs text-gray-400">
+                              <span className="truncate">{app.description || app.category}</span>
+                              <span className="font-bold">
+                                {isPremium ? (
+                                  <>
+                                    <span className="text-gray-400 line-through text-xs mr-1">${app.reward.toFixed(2)}</span>
+                                    <span className="text-yellow-300">${(app.reward * 2).toFixed(2)}</span>
+                                  </>
+                                ) : (
+                                  <span className="text-yellow-400">${app.reward.toFixed(2)}</span>
+                                )}
+                              </span>
+                            </div>
+                            <div className="flex gap-1 mt-1">
+                              {app.premiumOnly && (
+                                <span className="text-xs bg-purple-900 text-purple-300 px-2 py-1 rounded-full">
+                                  Premium Only
+                                </span>
+                              )}
+                              <span className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded-full">
+                                {app.type}
+                              </span>
+                            </div>
+                          </div>
+                          {app.premiumOnly && !isPremium ? (
+                            <button 
+                              className="ml-auto bg-gradient-to-r from-purple-600 to-purple-700 text-white text-sm px-3 py-2 rounded-lg flex items-center gap-1 hover:opacity-90 transition"
+                              onClick={upgradeToPremium}
+                            >
+                              <FaCrown className="text-yellow-300" /> 
+                            </button>
+                          ) : (
+                            <button 
+                              className={`ml-auto text-sm px-4 py-2 rounded-lg transition ${app.installed ? 'bg-gray-700 text-gray-500 cursor-not-allowed' : 'bg-gradient-to-r from-yellow-500 to-yellow-600 text-black font-medium hover:opacity-90'}`}
+                              onClick={() => !app.installed && installApp(app.id)}
+                              disabled={app.installed}
+                            >
+                              {app.installed ? 'Installed' : 'Install'}
+                            </button>
+                          )}
+                        </motion.div>
+                      ))}
+                    </div>
+                  </>
+                )}
               </div>
             )}
 
-            {activeTab === 'withdraw' && (
+            {activeTab === 'referrals' && (
               <div className="text-center py-8">
-                <div className="text-5xl mb-2">💰</div>
-                <h3 className="font-bold mb-1">Withdraw Your Earnings</h3>
-                <p className="text-sm text-gray-400">
-                  {isPremium ? "Premium: No minimum withdrawal!" : "Minimum withdrawal: $5.00"}
-                </p>
-                
-                <div className="mt-6 space-y-4">
-                  <div className="bg-gray-800 p-4 rounded-lg">
-                    <div className="font-bold text-lg mb-2">${balance.toFixed(2)}</div>
-                    <p className="text-sm text-gray-400">Available Balance</p>
-                    <button 
-                      className={`mt-3 w-full py-2 rounded-lg font-medium ${balance >= (isPremium ? 0.01 : 5) ? 'bg-yellow-400 text-black' : 'bg-gray-700 text-gray-400'}`}
-                      disabled={balance < (isPremium ? 0.01 : 5)}
-                    >
-                      Withdraw Now
-                    </button>
+                <div className="bg-gradient-to-br from-gray-800 to-gray-900 border border-gray-700 rounded-xl p-6 max-w-md mx-auto">
+                  <FaShareAlt className="text-4xl text-blue-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-bold mb-2">Refer Friends & Earn More</h3>
+                  <p className="text-gray-400 mb-4">
+                    Share your referral link and earn 20% of your friends' earnings!
+                  </p>
+                  <div className="bg-gray-800 p-3 rounded-lg border border-gray-700 mb-4">
+                    <p className="text-sm text-gray-300 break-all">
+                      https://yourapp.com/ref/username123
+                    </p>
                   </div>
-                  
-                  <div className="grid grid-cols-3 gap-2">
-                    {['PayPal', 'Paytm', 'Bank'].map(method => (
-                      <div key={method} className="bg-gray-800 p-2 rounded-lg flex flex-col items-center">
-                        <div className="text-xl mb-1">
-                          {method === 'PayPal' ? '💳' : method === 'Paytm' ? '📱' : '🏦'}
+                  <button className="bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium py-2 px-6 rounded-lg hover:opacity-90 transition">
+                    Copy Referral Link
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'stats' && (
+              <div className="py-4">
+                <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                  <FaChartLine className="text-yellow-400" /> Your Statistics
+                </h3>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                    <h4 className="text-gray-400 text-sm mb-1">Total Earnings</h4>
+                    <p className="text-2xl font-bold text-yellow-400">${(balance + 42.35).toFixed(2)}</p>
+                  </div>
+                  <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                    <h4 className="text-gray-400 text-sm mb-1">Apps Installed</h4>
+                    <p className="text-2xl font-bold">{totalInstalls + 17}</p>
+                  </div>
+                </div>
+                
+                <div className="bg-gray-800 p-4 rounded-lg border border-gray-700">
+                  <h4 className="text-gray-400 text-sm mb-3">Earning History</h4>
+                  <div className="space-y-3">
+                    {[1, 2, 3, 4, 5].map((item) => (
+                      <div key={item} className="flex justify-between items-center pb-2 border-b border-gray-700">
+                        <div className="flex items-center gap-3">
+                          <div className="bg-yellow-500 bg-opacity-20 p-2 rounded-full">
+                            <MdPhoneIphone className="text-yellow-400" />
+                          </div>
+                          <div>
+                            <p className="font-medium">App Installation</p>
+                            <p className="text-xs text-gray-400">{new Date().toLocaleDateString()}</p>
+                          </div>
                         </div>
-                        <div className="text-xs">{method}</div>
+                        <p className="text-yellow-400 font-bold">+${(Math.random() * 3 + 0.5).toFixed(2)}</p>
                       </div>
                     ))}
                   </div>
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      </motion.div>
 
-            {activeTab === 'refer' && (
-              <div className="text-center py-4">
-                <div className="text-5xl mb-2">👥</div>
-                <h3 className="font-bold mb-1">Invite Friends</h3>
-                <p className="text-sm text-gray-400 mb-4">
-                  Earn 25% of their earnings {isPremium && <span className="text-yellow-400">+ $1 bonus per friend!</span>}
-                </p>
-                
-                <div className="bg-gray-700 p-3 rounded-lg text-sm mb-4">
-                  <p>Your referral code:</p>
-                  <p className="font-mono bg-gray-800 p-2 rounded mt-1">EARN{Math.floor(Math.random() * 1000)}</p>
-                </div>
-                
-                <button className="w-full bg-blue-600 hover:bg-blue-700 py-2 rounded-lg flex items-center justify-center gap-2">
-                  <FaShareAlt /> Share Referral Link
-                </button>
-                
-                {isPremium && (
-                  <div className="mt-4 bg-gradient-to-r from-purple-600 to-pink-600 p-3 rounded-lg">
-                    <h4 className="font-bold flex items-center justify-center gap-1">
-                      <FaCrown /> Premium Bonus
-                    </h4>
-                    <p className="text-xs">You get $1 for every friend who joins!</p>
-                  </div>
-                )}
+      {/* Premium Features Section */}
+      {!isPremium && (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="max-w-4xl mx-auto mt-8 bg-gradient-to-br from-purple-900 to-purple-950 rounded-xl p-6 border border-purple-800"
+        >
+          <div className="flex flex-col md:flex-row items-center gap-6">
+            <div className="flex-1">
+              <h2 className="text-2xl font-bold mb-3 flex items-center gap-2">
+                <FaCrown className="text-yellow-300" /> Unlock Premium Features
+              </h2>
+              <ul className="space-y-2 mb-4">
+                <li className="flex items-center gap-2">
+                  <FaGem className="text-purple-300" /> 2x Higher Earnings
+                </li>
+                <li className="flex items-center gap-2">
+                  <MdSecurity className="text-purple-300" /> Premium-Only Apps
+                </li>
+                <li className="flex items-center gap-2">
+                  <RiCouponLine className="text-purple-300" /> Exclusive Offers
+                </li>
+                <li className="flex items-center gap-2">
+                  <FaUserTie className="text-purple-300" /> Priority Support
+                </li>
+              </ul>
+            </div>
+            <div className="text-center">
+              <div className="bg-black bg-opacity-30 p-4 rounded-lg border border-purple-700 mb-3">
+                <p className="text-gray-400 line-through">$9.99/month</p>
+                <p className="text-3xl font-bold text-yellow-300">$4.99<span className="text-lg">/month</span></p>
+                <p className="text-xs text-gray-300">Limited Time Offer</p>
               </div>
-            )}
+              <button 
+                onClick={upgradeToPremium}
+                className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-black font-bold py-3 px-8 rounded-lg hover:opacity-90 transition flex items-center gap-2 mx-auto"
+              >
+                <FaCrown /> Upgrade Now
+              </button>
+            </div>
           </div>
         </motion.div>
-      </div>
-
-      {/* Features Section */}
-      <div className="bg-gray-800 py-16">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">
-            {isPremium ? 'Unlocked Premium Features' : 'How It Works'}
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {(isPremium ? [...features, ...premiumFeatures] : features).map((feature, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className={`bg-gray-700 p-6 rounded-xl hover:bg-gray-600 transition cursor-pointer ${index >= features.length ? 'border-2 border-yellow-400' : ''}`}
-              >
-                <div className="mb-4">
-                  {feature.icon}
-                </div>
-                <h3 className="font-bold text-lg mb-2">{feature.title}</h3>
-                <p className="text-gray-300 mb-3">{feature.desc}</p>
-                <p className="text-yellow-400 text-sm font-medium">{feature.stat}</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Premium Comparison */}
-      <div className="py-16 bg-gradient-to-b from-gray-800 to-gray-900">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Premium vs Free</h2>
-          
-          <div className="max-w-4xl mx-auto bg-gray-800 rounded-xl overflow-hidden">
-            <div className="grid grid-cols-1 md:grid-cols-2">
-              {/* Free Tier */}
-              <div className="p-8 border-b md:border-b-0 md:border-r border-gray-700">
-                <h3 className="text-2xl font-bold mb-4">Free Version</h3>
-                <ul className="space-y-3">
-                  <li className="flex items-start gap-2">
-                    <span className="text-gray-400">•</span>
-                    <span>Earn $0.50 - $3.00 per app</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-gray-400">•</span>
-                    <span>20-30 apps available daily</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-gray-400">•</span>
-                    <span>25% referral earnings</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-gray-400">•</span>
-                    <span>$5 minimum withdrawal</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-gray-400">•</span>
-                    <span>Standard support</span>
-                  </li>
-                </ul>
-              </div>
-              
-              {/* Premium Tier */}
-              <div className="p-8 bg-gray-700 relative">
-                <div className="absolute top-0 right-0 bg-yellow-400 text-black text-xs font-bold px-3 py-1 rounded-bl-lg">
-                  RECOMMENDED
-                </div>
-                <h3 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                  <FaCrown className="text-yellow-400" /> Premium Version
-                </h3>
-                <ul className="space-y-3">
-                  <li className="flex items-start gap-2">
-                    <span className="text-yellow-400">•</span>
-                    <span>Earn $1.50 - $9.00 per app (3x more!)</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-yellow-400">•</span>
-                    <span>50-70 apps available daily</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-yellow-400">•</span>
-                    <span>25% referral earnings + $1 bonus per friend</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-yellow-400">•</span>
-                    <span>No minimum withdrawal</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-yellow-400">•</span>
-                    <span>Priority 24/7 support</span>
-                  </li>
-                </ul>
-                
-                <button 
-                  onClick={() => setIsPremium(true)}
-                  className="mt-6 w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 py-3 rounded-lg font-bold flex items-center justify-center gap-2"
-                >
-                  <FaCrown /> Upgrade Now - $9.99/month
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Testimonials */}
-      <div className="py-16">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Success Stories</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                name: "Rahul S.",
-                earnings: "$245",
-                text: "I earned enough for my college books in just 2 weeks!",
-                premium: false
-              },
-              {
-                name: "Priya M.",
-                earnings: "$520",
-                text: "Premium was a game-changer - earning 3x more now!",
-                premium: true
-              },
-              {
-                name: "Amit K.",
-                earnings: "$1,240",
-                text: "With referrals and premium, this is now my main income source!",
-                premium: true
-              }
-            ].map((testimonial, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.2 }}
-                className={`bg-gray-800 p-6 rounded-xl border ${testimonial.premium ? 'border-yellow-400' : 'border-gray-700'}`}
-              >
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center text-black font-bold">
-                    {testimonial.name.charAt(0)}
-                  </div>
-                  <div>
-                    <h4 className="font-bold">{testimonial.name}</h4>
-                    <div className="flex items-center text-sm">
-                      <span className="text-yellow-400">Earned: {testimonial.earnings}</span>
-                      {testimonial.premium && (
-                        <span className="ml-2 bg-purple-600 text-xs px-2 py-0.5 rounded-full flex items-center">
-                          <FaCrown className="mr-1" /> Premium
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <p className="text-gray-300">"{testimonial.text}"</p>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* CTA Section */}
-      <div className="bg-gradient-to-r from-purple-600 to-blue-600 py-16">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold mb-6">
-            Ready to Start Earning?
-          </h2>
-          <p className="text-xl mb-8 max-w-2xl mx-auto">
-            {isPremium 
-              ? "You're crushing it with Premium! Invite friends to earn even more."
-              : "Join thousands of users making money in their free time"}
-          </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <button className="bg-white hover:bg-gray-100 text-black font-bold py-3 px-8 rounded-lg flex items-center justify-center gap-2 transition">
-              <FaGooglePlay /> Install Now
-            </button>
-            <button 
-              onClick={() => setIsPremium(!isPremium)}
-              className={`${isPremium ? 'bg-black bg-opacity-30 hover:bg-opacity-50' : 'bg-gradient-to-r from-yellow-400 to-yellow-500 hover:from-yellow-500 hover:to-yellow-600 text-black'} font-bold py-3 px-8 rounded-lg flex items-center justify-center gap-2 transition border border-white`}
-            >
-              <FaCrown /> {isPremium ? 'Premium Active' : 'Go Premium'}
-            </button>
-          </div>
-          
-          {!isPremium && (
-            <div className="mt-8 bg-black bg-opacity-20 p-4 rounded-lg inline-block">
-              <div className="flex items-center gap-2">
-                <RiCouponLine className="text-yellow-300" />
-                <span>Use code <strong>EARN100</strong> for 10% off first month!</span>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   );
 };
