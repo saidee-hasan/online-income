@@ -22,7 +22,7 @@ Earn-Money is a platform designed to help users earn rewards through various tas
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/earn-money.git
+   git clone https://github.com/saidee-hasan/earn-money.git
    ```
 
 2. Navigate to the project directory:
