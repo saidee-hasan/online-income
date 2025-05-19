@@ -5,39 +5,6 @@ import { RiCouponLine } from 'react-icons/ri';
 import { motion } from 'framer-motion';
 
 const AppInstallIncome = () => {
-  const [activeTab, setActiveTab] = useState('earn');
-  const [isPremium, setIsPremium] = useState(false);
-  const [balance, setBalance] = useState(12.75);
-  const [dailyApps, setDailyApps] = useState([]);
-  const [timeLeft, setTimeLeft] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [totalInstalls, setTotalInstalls] = useState(0);
-  const [userCountry, setUserCountry] = useState(null);
-  const [lastUpdated, setLastUpdated] = useState(null);
-
-  // Get random color for app cards
-  const getRandomColor = () => {
-    const colors = [
-      'bg-gradient-to-br from-red-500 to-red-700',
-      'bg-gradient-to-br from-blue-500 to-blue-700',
-      'bg-gradient-to-br from-green-500 to-green-700',
-      'bg-gradient-to-br from-yellow-500 to-yellow-700',
-      'bg-gradient-to-br from-purple-500 to-purple-700'
-    ];
-    return colors[Math.floor(Math.random() * colors.length)];
-  };
-
-  // Get appropriate icon based on offer type
-  const getOfferIcon = (type) => {
-    switch(type) {
-      case 'Pin-Submit': return '📱';
-      case 'Download': return '⬇️';
-      case 'Survey': return '📝';
-      case 'Signup': return '✍️';
-      default: return '💰';
-    }
-  };
 
   // Generate demo apps for fallback
   const generateDemoApps = () => {
