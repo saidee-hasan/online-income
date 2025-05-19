@@ -1,4 +1,34 @@
+import React from "react";
+import { 
+  FaDownload, 
+  FaLock, 
+  FaUser, 
+  FaWallet, 
+  FaMoneyCheckAlt, 
+  FaClipboardList, 
+  FaChevronRight, 
+  FaCrown,
+  FaGem,
+  FaCoins,
+  FaChartLine
+} from "react-icons/fa";
+import { MdExitToApp, MdSecurity } from "react-icons/md";
+import { IoMdNotifications } from "react-icons/io";
+import { BiSolidBadgeCheck } from "react-icons/bi";
 
+const menuItems = [
+  { icon: <FaClipboardList className="text-cyan-300" />, label: "Transaction History", badge: "New" },
+  { icon: <FaMoneyCheckAlt className="text-purple-300" />, label: "Withdraw Details" },
+  { icon: <FaChartLine className="text-emerald-300" />, label: "Investment Analytics" },
+  { icon: <FaDownload className="text-pink-300" />, label: "Download APP" },
+  { icon: <FaWallet className="text-amber-300" />, label: "My Portfolio", badge: "3" },
+  { icon: <FaLock className="text-red-300" />, label: "Security Center" },
+  { icon: <FaUser className="text-blue-300" />, label: "Account Settings" },
+  { icon: <IoMdNotifications className="text-yellow-300" />, label: "Notifications", badge: "5" },
+];
+
+function Profile() {
+  return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 font-sans py-6 px-2 sm:px-4">
       {/* Floating Particles Background */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
