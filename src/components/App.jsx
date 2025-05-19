@@ -515,4 +515,30 @@ const AppInstallIncome = () => {
                 </li>
                 <li className="flex items-center gap-2">
                   <RiCouponLine className="text-purple-300" /> Exclusive Offers
-        
+                </li>
+                <li className="flex items-center gap-2">
+                  <FaUserTie className="text-purple-300" /> Priority Support
+                </li>
+              </ul>
+            </div>
+            <div className="text-center">
+              <div className="bg-black bg-opacity-30 p-4 rounded-lg border border-purple-700 mb-3">
+                <p className="text-gray-400 line-through">$9.99/month</p>
+                <p className="text-3xl font-bold text-yellow-300">$4.99<span className="text-lg">/month</span></p>
+                <p className="text-xs text-gray-300">Limited Time Offer</p>
+              </div>
+              <button 
+                onClick={upgradeToPremium}
+                className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-black font-bold py-3 px-8 rounded-lg hover:opacity-90 transition flex items-center gap-2 mx-auto"
+              >
+                <FaCrown /> Upgrade Now
+              </button>
+            </div>
+          </div>
+        </motion.div>
+      )}
+    </div>
+  );
+};
+
+export default AppInstallIncome;
