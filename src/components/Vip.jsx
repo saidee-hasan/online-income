@@ -33,6 +33,50 @@ const Ads = () => {
     return typeof window !== 'undefined' ? window.innerWidth < 768 : false;
   });
 
+  // Premium ad data
+  const ads = [
+    { 
+      id: 1, 
+      title: "Premium Game - Install Now!", 
+      points: 10, 
+      premium: false,
+      image: "https://via.placeholder.com/300x150/4A5568/FFFFFF?text=Game+Ad"
+    },
+    { 
+      id: 2, 
+      title: "Limited Time Offer", 
+      points: 15, 
+      premium: false,
+      image: "https://via.placeholder.com/300x150/4A5568/FFFFFF?text=Special+Offer"
+    },
+    { 
+      id: 3, 
+      title: "Exclusive Deal", 
+      points: 20, 
+      premium: false,
+      image: "https://via.placeholder.com/300x150/4A5568/FFFFFF?text=Exclusive+Deal"
+    },
+    { 
+      id: 4, 
+      title: "VIP Black Offer", 
+      points: 50, 
+      premium: true,
+      image: "https://via.placeholder.com/300x150/000000/FFFFFF?text=VIP+Black+Offer",
+      bgColor: "bg-black",
+      borderColor: "border-yellow-500"
+    },
+    { 
+      id: 5, 
+      title: "Elite Partner Deal", 
+      points: 40, 
+      premium: true,
+      image: "https://via.placeholder.com/300x150/111827/FFFFFF?text=Elite+Deal",
+      bgColor: "bg-gray-900",
+      borderColor: "border-yellow-400"
+    },
+  ];
+
+  const [currentAd, setCurrentAd] = useState(ads[0]);
 
   // Persist state to localStorage
   useEffect(() => {
