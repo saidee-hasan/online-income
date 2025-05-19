@@ -1,9 +1,3 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { FaCoins, FaFire, FaHistory, FaUserAlt, FaStar, FaGem, FaBolt, FaCrown } from 'react-icons/fa';
-import { MdDone, MdOutlineTimer, MdStars, MdClose } from 'react-icons/md';
-import { GiTwoCoins, GiCash } from 'react-icons/gi';
-import { RiVipCrownFill } from 'react-icons/ri';
-import { motion, AnimatePresence } from 'framer-motion';
 
 const Ads = () => {
   // State initialization
