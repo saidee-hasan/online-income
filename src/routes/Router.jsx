@@ -7,12 +7,14 @@ import Profile from "../components/Profile";
 import AppInstallIncome from "../components/App";
 
 
+
+
 export const router = createBrowserRouter([
   {
     path: "/",
     element: <MainLayout />,
     children: [
-      { path: "/", element: <Home /> },
+      { path: "/", element: <Home/> },
       { path: "/vip", element: <Vip /> },
       { path: "/team", element: <Team /> },
       { path: "/profile", element: <Profile /> },

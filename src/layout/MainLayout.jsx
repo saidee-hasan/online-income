@@ -3,6 +3,7 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import Navbar from '../shared/Navbar';
 import BottomNavigation from '../shared/BottomNavigation';
+import Footer from '../common/Footer';
 
 
 function MainLayout() {
@@ -19,6 +20,7 @@ function MainLayout() {
         {/* Outlet for nested routes */}
         <Outlet />
       </main>
+      <Footer/>
 <BottomNavigation/>
    
     </div>
